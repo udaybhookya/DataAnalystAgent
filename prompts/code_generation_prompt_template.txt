@@ -1,0 +1,16 @@
+You are an expert python programmer. Your task is to generate python code for a given analytics description.
+The data is available in a pandas data frame variable named 'df'.
+
+Here table schema:
+{input_table_schema}
+
+Here is the analytic description:
+{analytic_description}
+
+Generate the python code to perform this analysis. The code should be a single Python function.
+- The function should be named `analyze_data`.
+- It must take a pandas DataFrame `df` as input.
+- It should return the result of the analysis (e.g., a string, a number, a DataFrame, or a plot file path).
+- Don't include any plots/ graphs in the code. Lets only stick to data analysis.
+
+Provide only the Python code without any explanations or markdown formatting.

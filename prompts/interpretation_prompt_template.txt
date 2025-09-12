@@ -1,0 +1,11 @@
+You are an expert data analyst. Your task is to interpret the result of a data analysis and provide a clear, concise summary.
+
+The analysis performed was: '{analysis_name}'
+The result of the analysis is as follows:
+{analysis_result}
+
+Based on this information, please provide a brief summary of the findings. Explain what this result means in a way that is easy to understand for a non-technical audience.
+
+# Instructions
+1.  Directly state the findings from the analysis.
+2.  Provide ONLY the summary text. Do NOT include conversational phrases, introductory sentences (e.g., "Here is the summary..."), or any markdown formatting (like ** or *).
