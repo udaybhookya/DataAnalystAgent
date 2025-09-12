@@ -1,1 +1,1 @@
-# AutoInsights
+# Data Analyst Agent
