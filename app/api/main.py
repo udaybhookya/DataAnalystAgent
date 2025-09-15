@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.core.utils.load_llm import LLMLoader
-from app.api.models import ReportRequest, SessionResponse
+from app.api.models import ReportRequest, SessionResponse, ChatRequest, ChatResponse
 from app.core.utils.load_data import load_data, Table
 from app.core.utils.preprocess_data import preprocess_tables
 from app.core.workflow import build_report_workflow
@@ -133,3 +133,14 @@ async def download_report(session_id: str):
     report_path = SESSIONS[session_id]["report_path"]
     return FileResponse(path=report_path, media_type='application/pdf', filename="financial_analysis_report.pdf")
 
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat_with_agent(request: ChatRequest):
+    if request.session_id not in SESSIONS:
+        raise HTTPException(status_code=404, detail="Session not found.")
+    
+    # For now, we'll just echo the message back.
+    # Later, you can add your chat logic here.
+    response_message = f"Received your message: '{request.message}'"
+    
+    return ChatResponse(response=response_message)
