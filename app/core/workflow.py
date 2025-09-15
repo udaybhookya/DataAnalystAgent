@@ -4,7 +4,8 @@ from .agents.plan_analytics import analytics_planning_node
 from .agents.code_execution_agent import code_execution_node
 from .agents.content_planning_agent import content_planning_node
 from .agents.report_generation import report_generation_node
-from IPython.display import Image, display
+from .llm_tools.schema_selection import schema_selection_node
+# from IPython.display import Image, display
 
 
 def build_report_workflow(state):
@@ -30,5 +31,17 @@ def build_report_workflow(state):
     # img = workflow.compile().get_graph(xray=True).draw_mermaid_png()
     # with open('graph.png', 'wb') as f:
     #     f.write(img)
+    
+    return workflow.compile()
+
+def build_chat_workflow(state):
+    """Builds the workflow for the chat functionality of the Agentic AI Data Analyst."""
+    
+    # Build the LangGraph
+    workflow = StateGraph(dict)
+    workflow.add_node("schema_selection", schema_selection_node)
+
+    workflow.add_edge(START, "schema_selection")
+    workflow.add_edge("schema_selection", END)
     
     return workflow.compile()

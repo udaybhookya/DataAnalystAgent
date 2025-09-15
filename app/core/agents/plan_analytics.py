@@ -53,6 +53,11 @@ def analytics_planning_node(state: ReportState) -> dict:
 
     generated_code = []
 
+    def print_generated_code(code):
+        print("Generated Code:")
+        print(code)
+        print("-----------------------------------")
+
     for one_analytic in analytics_plan:
         print(f"Generating code for: {one_analytic['analysis_name']}")
         
@@ -69,9 +74,7 @@ def analytics_planning_node(state: ReportState) -> dict:
             "code": code
         })
         
-        print("Generated Code:")
-        print(code)
-        print("-----------------------------------")
+        print_generated_code(code)
 
     state['analytics_code'] = generated_code
     

@@ -10,8 +10,6 @@ from app.core.state import ReportState
 matplotlib.use('Agg')
 
 def clean_text_for_pdf(text: str) -> str:
-    if not isinstance(text, str):
-        text = str(text)
     text = text.replace('**', '').replace('*', '')
     return text.strip()
 

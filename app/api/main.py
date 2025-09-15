@@ -9,8 +9,8 @@ from app.core.utils.load_llm import LLMLoader
 from app.api.models import ReportRequest, SessionResponse, ChatRequest, ChatResponse
 from app.core.utils.load_data import load_data, Table
 from app.core.utils.preprocess_data import preprocess_tables
-from app.core.workflow import build_report_workflow
-from app.core.state import ReportState
+from app.core.workflow import build_report_workflow, build_chat_workflow
+from app.core.state import ReportState, ChatState
 
 # Load environment variables
 load_dotenv()
@@ -52,10 +52,10 @@ async def create_session(data_file: UploadFile = File(...), schema_file: UploadF
 
         input_files = [(data_file.filename or "data.csv").replace(".csv", "")]
         schema_files = [(schema_file.filename or "schema.csv").replace(".csv", "")]
-        
+
         tables = load_data(input_files, schema_files, data_path, schema_path)
         processed_tables = preprocess_tables(tables)
-        
+
         SESSIONS[session_id] = {
             "processed_tables": processed_tables,
             "session_path": session_path,
@@ -66,7 +66,9 @@ async def create_session(data_file: UploadFile = File(...), schema_file: UploadF
 
     except Exception as e:
         shutil.rmtree(session_path)
-        raise HTTPException(status_code=500, detail=f"Failed to create session: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create session: {str(e)}"
+        ) from e
 
     return SessionResponse(session_id=session_id, message="Session created successfully.")
 
@@ -78,7 +80,7 @@ async def generate_report(session_id: str):
 
     try:
         session_data = SESSIONS[session_id]
-        
+
         loader = LLMLoader(google_api_key=os.getenv("GOOGLE_API_KEY"))
         llm = loader.load_google_model_flash(temperature=0)
 
@@ -88,27 +90,31 @@ async def generate_report(session_id: str):
             "plots_path": session_data["plots_path"],
             "pdf_path": None, # Will be populated by the workflow
         }
-        
+
         # State
         state = ReportState(input_context)
         state = state.to_dict()
-        
-        
+
+
         try:
             # Build the workflow
             graph = build_report_workflow(state)
         except Exception as e:
-            print(f"Error building workflow: {e}")  
-            raise HTTPException(status_code=500, detail=f"Failed to build workflowt: {str(e)}")
+            print(f"Error building workflow: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to build workflow: {str(e)}"
+            ) from e
 
-        
+
         try:
             # Run the workflow
             final_state = graph.invoke(state)
         except Exception as e:
             print(f"Error running workflow: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed at Graph invoke: {str(e)}")
-        
+            raise HTTPException(
+                status_code=500, detail=f"Failed at Graph invoke: {str(e)}"
+            ) from e
+
         # The final PDF path is returned by the workflow
         final_report_path = final_state.get('pdf_path')
         if not final_report_path or not os.path.exists(final_report_path):
@@ -122,7 +128,9 @@ async def generate_report(session_id: str):
             report_path=f"/report/download/{session_id}"
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate report: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate report: {str(e)}"
+        ) from e
 
 
 @app.get("/report/download/{session_id}")
@@ -138,9 +146,55 @@ async def download_report(session_id: str):
 async def chat_with_agent(request: ChatRequest):
     if request.session_id not in SESSIONS:
         raise HTTPException(status_code=404, detail="Session not found.")
-    
+
     # For now, we'll just echo the message back.
     # Later, you can add your chat logic here.
     response_message = f"Received your message: '{request.message}'"
-    
+
+    try:
+        session_data = SESSIONS[request.session_id]
+
+        loader = LLMLoader(google_api_key=os.getenv("GOOGLE_API_KEY"))
+        llm = loader.load_google_model_flash(temperature=0)
+
+        input_context = {
+            "llm_model": llm,
+            "chat_history": session_data.get("chat_history", []),
+            "user_message": session_data.get("user_message", request.message),
+            "agent_response": None, # Will be populated by the workflow
+        }
+
+        # State
+        state = ChatState(input_context)
+        state = state.to_dict()
+
+
+        try:
+            # Build the workflow
+            graph = build_chat_workflow(state)
+        except Exception as e:
+            print(f"Error building chat workflow: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to build chat workflow: {str(e)}",
+            ) from e
+
+
+        try:
+            # Run the workflow
+            updated_chat_state = graph.invoke(state)
+            response_message = updated_chat_state.get("agent_response", response_message)
+            
+        except Exception as e:
+            print(f"Error running chat workflow: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed at Chat Graph invoke: {str(e)}",
+            ) from e
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate report: {str(e)}"
+        ) from e
+
     return ChatResponse(response=response_message)

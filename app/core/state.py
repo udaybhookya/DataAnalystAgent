@@ -37,3 +37,26 @@ class ReportState:
             "pdf_path": self.pdf_path,
         }
 
+
+class ChatState:
+    """
+    This class represents the state of the chat process.
+    It contains all the necessary information to manage a chat session.
+    """
+    def __init__(self, input_context: Dict[str, Any]):
+        """
+        Initializes the chat state object from a dictionary.
+        """
+        self.llm_model = input_context.get("llm_model")
+        self.chat_history: List[Dict[str, str]] = input_context.get("chat_history", [])
+        self.user_message: str = input_context.get("user_message", "")
+        self.agent_response: str = input_context.get("agent_response", "")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the ChatState instance to a dictionary for the workflow."""
+        return {
+            "llm_model": self.llm_model,
+            "chat_history": self.chat_history,
+            "user_message": self.user_message,
+            "agent_response": self.agent_response,
+        }
